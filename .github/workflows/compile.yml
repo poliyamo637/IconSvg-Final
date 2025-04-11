@@ -18,7 +18,7 @@ jobs:
           brew install perl make git
           
           # 克隆Theos主仓库+所有子模块（使用镜像源加速）
-          git clone --depth=1 https://mirror.ghproxy.com/https://github.com/theos/theos.git ~/theos
+          git clone --depth=1 https://github.com/theos/theos.git ~/theos
           cd ~/theos
           git submodule update --init --recursive
           
