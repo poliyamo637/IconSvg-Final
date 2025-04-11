@@ -32,3 +32,4 @@ void showUIElements() {
     [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleCancel handler:nil]];
     [window.rootViewController presentViewController:alert animated:YES completion:nil];
 }
+ 
