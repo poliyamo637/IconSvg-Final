@@ -17,30 +17,30 @@ jobs:
           # 安装基础工具
           brew install perl make git
           
-          # 克隆Theos主仓库+所有子模块
-          git clone --recursive https://github.com/theos/theos.git ~/theos
+          # 克隆Theos主仓库+所有子模块（使用镜像源加速）
+          git clone --depth=1 https://mirror.ghproxy.com/https://github.com/theos/theos.git ~/theos
+          cd ~/theos
+          git submodule update --init --recursive
           
-          # 设置环境变量
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-          echo "PATH=~/theos/vendor/dm.pl/bin:$PATH" >> $GITHUB_ENV
-          echo "PATH=~/theos/bin:$PATH" >> $GITHUB_ENV
+          # 设置环境变量（永久生效）
+          echo "THEOS=~/theos" >> ~/.zshrc
+          echo "PATH=~/theos/bin:~/theos/vendor/dm.pl/bin:$PATH" >> ~/.zshrc
+          source ~/.zshrc
 
-      - name: Install ldid
+      - name: Verify Tools
         run: |
-          curl -LO https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_macosx_arm64
-          chmod +x ldid_macosx_arm64
-          sudo mv ldid_macosx_arm64 /usr/local/bin/ldid
+          # 验证工具链
+          ~/theos/vendor/dm.pl/bin/dm.pl --version || (echo "❌ dm.pl验证失败" && exit 1)
+          ldid -v || (echo "❌ ldid验证失败" && exit 1)
 
       - name: Build
         run: |
-          # 设置iOS SDK路径
+          export THEOS=~/theos
+          export PATH=~/theos/bin:~/theos/vendor/dm.pl/bin:$PATH
           export SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)
           
-          # 验证工具链
-          which dm.pl || (echo "❌ dm.pl缺失" && exit 1)
-          ldid -v || (echo "❌ ldid缺失" && exit 1)
-          
-          # 开始编译
+          # 强制重新生成配置
+          make clean
           make package FINALPACKAGE=1
 
       - name: Upload Artifact
@@ -48,3 +48,4 @@ jobs:
         with:
           name: IconSvg-Deb
           path: packages/*.deb
+          retention-days: 1
