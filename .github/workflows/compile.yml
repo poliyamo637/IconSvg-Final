@@ -12,22 +12,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Theos
+      - name: Setup Theos (完整版)
         run: |
-          git clone --depth=1 https://github.com/theos/theos.git ~/theos
+          # 安装基础工具
+          brew install perl make git
+          
+          # 克隆Theos主仓库+所有子模块
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          
+          # 设置环境变量
           echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "PATH=~/theos/vendor/dm.pl/bin:$PATH" >> $GITHUB_ENV
           echo "PATH=~/theos/bin:$PATH" >> $GITHUB_ENV
 
-      - name: Install Tools
+      - name: Install ldid
         run: |
-          brew install ldid
-          sudo xcode-select --switch /Applications/Xcode.app
-          sudo xcodebuild -license accept
+          curl -LO https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_macosx_arm64
+          chmod +x ldid_macosx_arm64
+          sudo mv ldid_macosx_arm64 /usr/local/bin/ldid
 
       - name: Build
         run: |
+          # 设置iOS SDK路径
           export SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)
-          make clean
+          
+          # 验证工具链
+          which dm.pl || (echo "❌ dm.pl缺失" && exit 1)
+          ldid -v || (echo "❌ ldid缺失" && exit 1)
+          
+          # 开始编译
           make package FINALPACKAGE=1
 
       - name: Upload Artifact
@@ -35,4 +48,3 @@ jobs:
         with:
           name: IconSvg-Deb
           path: packages/*.deb
-          retention-days: 1
